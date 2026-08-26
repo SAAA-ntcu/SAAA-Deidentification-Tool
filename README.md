@@ -1,7 +1,7 @@
 # SAAA 學生學習能力檢測去識別化工具 (SAAA De-identification Tool)
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-brightgreen?style=flat&logo=github)](https://your-username.github.io/your-repo-name/)
-[![CI / CD](https://github.com/your-username/your-repo-name/actions/workflows/deploy.yml/badge.svg)](https://github.com/your-username/your-repo-name/actions)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-brightgreen?style=flat&logo=github)](https://liangchengyu-ntcu.github.io/SAAA-Deidentification-Tool/)
+[![CI / CD](https://github.com/liangchengyu-ntcu/SAAA-Deidentification-Tool/actions/workflows/deploy.yml/badge.svg)](https://github.com/liangchengyu-ntcu/SAAA-Deidentification-Tool/actions)
 [![Bootstrap 5](https://img.shields.io/badge/Bootstrap-5.3.3-purple?logo=bootstrap)](https://getbootstrap.com/)
 [![SweetAlert2](https://img.shields.io/badge/SweetAlert2-Popup-red)](https://sweetalert2.github.io/)
 [![100% Client-Side](https://img.shields.io/badge/Security-100%25%20Offline%20%26%20Client--Side-blue?logo=shield)](https://github.com/)
