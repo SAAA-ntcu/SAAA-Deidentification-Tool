@@ -88,6 +88,28 @@ function transformFilename(origName, originalSchools, schoolAlias, countyAlias) 
   return res + '.xlsx';
 }
 
+/** 完整路徑脫敏轉換 (包含所有父層資料夾名稱與檔案名稱) */
+function transformPath(relPath, originalSchools, schoolAlias, countyAlias) {
+  if (!relPath || typeof relPath !== 'string') return relPath;
+  let normalized = relPath.replace(/\\/g, '/').replace(/^\.\//, '');
+  const segments = normalized.split('/');
+  const transformedSegments = segments.map((seg, idx) => {
+    const isFile = idx === segments.length - 1 && seg.toLowerCase().endsWith('.xlsx');
+    let res = isFile ? seg.replace(/\.[^/.]+$/, '') : seg;
+    for (const s of originalSchools) {
+      if (res.includes(s)) res = res.split(s).join(schoolAlias);
+    }
+    for (const c of AppState.counties) {
+      if (res.includes(c)) res = res.split(c).join(countyAlias);
+    }
+    res = res.replace(/縣立[^\s_/\\]+國小/g, schoolAlias);
+    res = res.replace(/市立[^\s_/\\]+國小/g, schoolAlias);
+    res = res.replace(/國立[^\s_/\\]+小學/g, schoolAlias);
+    return isFile ? (res + '.xlsx') : res;
+  });
+  return transformedSegments.join('/');
+}
+
 /** 觸發瀏覽器下載 Blob 檔案 */
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -533,9 +555,8 @@ async function runDeidentification() {
         }
       }
 
-      const newFileName = transformFilename(f.name, originalSchools, schoolAlias, countyAlias);
-      let targetPath = f.relPath.replace(/[^/\\]+$/, newFileName);
-      targetPath = targetPath.replace(/^\.\//, '').replace(/^\.\\/, '');
+      const targetPath = transformPath(f.relPath, originalSchools, schoolAlias, countyAlias);
+      const newFileName = targetPath.split('/').pop();
 
       const outData = XLSX.write(newWb, { bookType: 'xlsx', type: 'array' });
       zip.file(targetPath, outData);
