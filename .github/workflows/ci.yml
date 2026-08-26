@@ -8,6 +8,10 @@ on:
   pull_request:
     branches: [ main, master ]
 
+# 授予 GITHUB_TOKEN 寫入 Release 的權限
+permissions:
+  contents: write
+
 jobs:
   lint-and-validate:
     name: 語法檢測與敏感資料防護
@@ -19,7 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: 檢查 JavaScript 語法正確性
         run: |
