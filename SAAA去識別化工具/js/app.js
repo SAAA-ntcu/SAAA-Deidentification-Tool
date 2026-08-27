@@ -110,6 +110,26 @@ function transformPath(relPath, originalSchools, schoolAlias, countyAlias) {
   return transformedSegments.join('/');
 }
 
+/** 將去識別化後的活頁簿轉為結構化 JSON 資料物件 */
+function workbookToJson(wb) {
+  const result = {};
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName];
+    if (!ws || !ws['!ref']) continue;
+    
+    const cLbl = ws['A3'] ? ws['A3'].v : null;
+    if (cLbl === '學生姓名' || sheetName.includes('成績')) {
+      result[sheetName] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+    } else {
+      result[sheetName] = XLSX.utils.sheet_to_json(ws, { defval: null });
+    }
+  }
+  if (wb.SheetNames.length === 1 && !wb.SheetNames[0].includes('成績')) {
+    return result[wb.SheetNames[0]] || [];
+  }
+  return result;
+}
+
 /** 觸發瀏覽器下載 Blob 檔案 */
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -321,12 +341,14 @@ async function runDeidentification() {
   const schoolCodeAlias = document.getElementById('schoolCodeAlias').value.trim() || 'SCH01';
   const countyAlias = document.getElementById('countyAlias').value.trim() || '科技縣';
   const keepSeat = document.getElementById('seatOption').value === 'keep';
+  const exportFormat = document.getElementById('exportFormat') ? document.getElementById('exportFormat').value : 'both';
 
-  const config = { mode: AppState.currentMode, schoolAlias, schoolCodeAlias, countyAlias, keepSeat };
+  const config = { mode: AppState.currentMode, schoolAlias, schoolCodeAlias, countyAlias, keepSeat, exportFormat };
 
   appendLog(`\n==================================================`);
   appendLog(` SAAA 去識別化引擎啟動 (模式: ${config.mode.toUpperCase()})`);
   appendLog(` 學校別名: ${schoolAlias} (${schoolCodeAlias}) | 縣市別名: ${countyAlias}`);
+  appendLog(` 輸出格式: ${exportFormat === 'both' ? 'Excel (.xlsx) + JSON (.json)' : (exportFormat === 'json' ? '僅 JSON (.json)' : '僅 Excel (.xlsx)')}`);
   appendLog(` 總檔案數: ${AppState.loadedFiles.length} 個`);
   appendLog(`==================================================`);
 
@@ -558,8 +580,17 @@ async function runDeidentification() {
       const targetPath = transformPath(f.relPath, originalSchools, schoolAlias, countyAlias);
       const newFileName = targetPath.split('/').pop();
 
-      const outData = XLSX.write(newWb, { bookType: 'xlsx', type: 'array' });
-      zip.file(targetPath, outData);
+      // 依使用者選取之格式寫入 ZIP (Excel 和/或 JSON)
+      if (exportFormat === 'both' || exportFormat === 'xlsx') {
+        const outData = XLSX.write(newWb, { bookType: 'xlsx', type: 'array' });
+        zip.file(targetPath, outData);
+      }
+
+      if (exportFormat === 'both' || exportFormat === 'json') {
+        const jsonData = workbookToJson(newWb);
+        const jsonPath = targetPath.replace(/\.xlsx$/i, '.json');
+        zip.file(jsonPath, JSON.stringify(jsonData, null, 2));
+      }
 
       const pct = Math.round(((i + 1) / totalFiles) * 100);
       document.getElementById('progressBar').style.width = pct + '%';
@@ -572,22 +603,29 @@ async function runDeidentification() {
       }
     }
 
-    // 若為研究模式，輸出對照表
+    // 若為研究模式，輸出對照表 (Excel / JSON)
     if (config.mode === 'research' && mapper.reverseInfo.length > 0) {
-      appendLog(`[對照表] 正在生成學生對照總表 mapping_table.xlsx (共 ${mapper.reverseInfo.length} 筆)...`);
-      const mapRows = [
-        ['學年度', '學校代碼', '原學校名稱', '年級', '班級', '座號', '原始姓名', '性別', '學生代碼']
-      ];
-      for (const item of mapper.reverseInfo) {
-        mapRows.push([
-          item.學年度, item.學校代碼, item.原學校名稱, item.年級, item.班級, item.座號, item.原始姓名, item.性別, item.學生代碼
-        ]);
+      appendLog(`[對照表] 正在生成學生對照總表 mapping_table (共 ${mapper.reverseInfo.length} 筆)...`);
+      
+      if (exportFormat === 'both' || exportFormat === 'xlsx') {
+        const mapRows = [
+          ['學年度', '學校代碼', '原學校名稱', '年級', '班級', '座號', '原始姓名', '性別', '學生代碼']
+        ];
+        for (const item of mapper.reverseInfo) {
+          mapRows.push([
+            item.學年度, item.學校代碼, item.原學校名稱, item.年級, item.班級, item.座號, item.原始姓名, item.性別, item.學生代碼
+          ]);
+        }
+        const mapWb = XLSX.utils.book_new();
+        const mapWs = XLSX.utils.aoa_to_sheet(mapRows);
+        XLSX.utils.book_append_sheet(mapWb, mapWs, '學生對照表');
+        const mapData = XLSX.write(mapWb, { bookType: 'xlsx', type: 'array' });
+        zip.file('mapping_table.xlsx', mapData);
       }
-      const mapWb = XLSX.utils.book_new();
-      const mapWs = XLSX.utils.aoa_to_sheet(mapRows);
-      XLSX.utils.book_append_sheet(mapWb, mapWs, '學生對照表');
-      const mapData = XLSX.write(mapWb, { bookType: 'xlsx', type: 'array' });
-      zip.file('mapping_table.xlsx', mapData);
+
+      if (exportFormat === 'both' || exportFormat === 'json') {
+        zip.file('mapping_table.json', JSON.stringify(mapper.reverseInfo, null, 2));
+      }
     }
 
     // 階段三：壓縮打包

@@ -210,23 +210,31 @@
         </h2>
 
         <div class="row g-3">
-          <div class="col-md-3 col-sm-6">
+          <div class="col-lg-3 col-md-6 col-sm-6">
             <label class="form-label small fw-semibold text-secondary" for="schoolAlias">學校替換名稱：</label>
             <input type="text" class="form-control form-control-sm" id="schoolAlias" value="半導體國小">
           </div>
-          <div class="col-md-3 col-sm-6">
+          <div class="col-lg-2 col-md-6 col-sm-6">
             <label class="form-label small fw-semibold text-secondary" for="schoolCodeAlias">學校代碼別名：</label>
             <input type="text" class="form-control form-control-sm" id="schoolCodeAlias" value="SCH01">
           </div>
-          <div class="col-md-3 col-sm-6">
+          <div class="col-lg-2 col-md-4 col-sm-6">
             <label class="form-label small fw-semibold text-secondary" for="countyAlias">縣市替換別名：</label>
             <input type="text" class="form-control form-control-sm" id="countyAlias" value="科技縣">
           </div>
-          <div class="col-md-3 col-sm-6">
+          <div class="col-lg-2 col-md-4 col-sm-6">
             <label class="form-label small fw-semibold text-secondary" for="seatOption">座號欄位處理：</label>
             <select class="form-select form-select-sm" id="seatOption">
               <option value="drop">移除座號</option>
               <option value="keep">保留座號</option>
+            </select>
+          </div>
+          <div class="col-lg-3 col-md-4 col-sm-6">
+            <label class="form-label small fw-semibold text-secondary" for="exportFormat">檔案輸出格式：</label>
+            <select class="form-select form-select-sm" id="exportFormat">
+              <option value="both" selected>📊 Excel + 📝 JSON [雙格式]</option>
+              <option value="xlsx">僅 Excel 活頁簿 (.xlsx)</option>
+              <option value="json">僅 JSON 結構化檔案 (.json)</option>
             </select>
           </div>
         </div>
