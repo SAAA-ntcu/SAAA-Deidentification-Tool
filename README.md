@@ -37,11 +37,21 @@
 ## 🚀 快速開始
 
 ### 方式一：直接在 GitHub Pages 線上使用 (推薦)
-點擊 [GitHub Pages 線上版連結](https://your-username.github.io/your-repo-name/)，直接在瀏覽器拖入評量資料夾或 Zip，即可於本機記憶體完成脫敏並下載。
+點擊 [GitHub Pages 線上版連結](https://liangchengyu-ntcu.github.io/SAAA-Deidentification-Tool/)，直接在瀏覽器拖入評量資料夾或 Zip，即可於本機記憶體完成脫敏並下載。
 
 ### 方式二：下載離線工具包單機使用
-1. 至 [Releases 頁面](https://github.com/your-username/your-repo-name/releases) 下載 `SAAA_Deidentification_Tool_Offline.zip`。
+1. 至 [Releases 頁面](https://github.com/liangchengyu-ntcu/SAAA-Deidentification-Tool/releases) 下載 `SAAA_Deidentification_Tool_Offline.zip`。
 2. 解壓縮後，**點兩下打開 `index.html`**，即使拔掉網路線亦可正常使用。
+
+---
+
+## 📊 多格式匯出支援 (Export Formats)
+
+工具支援多種輸出格式切換：
+- 🚀 **全格式打包**：同時產出 Excel (`.xlsx`) + JSON (`.json`) + Markdown (`.md`)
+- 📊 **Excel + JSON 雙格式**：試算表與結構化資料一次搞定
+- 📑 **Markdown 報表**：純文字輕量表格，適合貼入 AI（ChatGPT / Claude）、Notion 或 Obsidian
+- 僅 Excel 活頁簿 / 僅 JSON 結構化檔案
 
 ---
 
