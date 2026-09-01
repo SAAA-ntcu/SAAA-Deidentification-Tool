@@ -382,7 +382,7 @@ async function runDeidentification() {
   document.getElementById('resultBox').classList.add('d-none');
 
   const schoolAlias = document.getElementById('schoolAlias').value.trim() || '半導體國小';
-  const schoolCodeAlias = document.getElementById('schoolCodeAlias').value.trim() || 'SCH01';
+  const schoolCodeAlias = document.getElementById('schoolCodeAlias').value.trim() || '999999';
   const countyAlias = document.getElementById('countyAlias').value.trim() || '科技縣';
   const keepSeat = document.getElementById('seatOption').value === 'keep';
   const exportFormat = document.getElementById('exportFormat') ? document.getElementById('exportFormat').value : 'both';
