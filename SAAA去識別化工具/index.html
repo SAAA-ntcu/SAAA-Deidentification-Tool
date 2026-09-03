@@ -18,6 +18,12 @@
 
 <body>
 
+  <!-- 公開聲明橫幅 -->
+  <div class="alert alert-warning alert-dismissible fade show text-center mb-0 rounded-0 border-0 fw-semibold" role="alert" style="background-color: #fef3cd; border-bottom: 2px solid #f59e0b !important; font-size: 14px;">
+    ⚠️ <strong>重要聲明：</strong>本工具僅適用於「學生學習能力檢測（SAAA）」下載之評量資料，請勿使用其他來源之資料。如有疑問請洽測驗統計與適性學習研究中心。
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
   <!-- 頂部導覽列 -->
   <header class="navbar navbar-dark navbar-custom py-3 mb-4 shadow-sm">
     <div class="container d-flex flex-wrap justify-content-between align-items-center">
@@ -54,6 +60,9 @@
           </svg>
           步驟 1：選取或拖入評量檔案 / 資料夾 / Zip
         </h2>
+        <p class="small text-muted mb-3">
+          📌 請將從 SAAA 學力檢測系統下載之評量檔案或資料夾拖曳至下方區域（支援 <code>.xlsx</code> 與 <code>.zip</code>）。本工具適配 SAAA 匯出之 7 大類 Excel 評量報表（個人成績、作答反應、答對率、班平均、各校等級資料、學校試題分析、縣市試題分析）與題本/報告 PDF。系統將自動解析工作表排版、欄位結構與機敏資訊，並於本機離線完成去識別化。
+        </p>
 
         <div class="dropzone" id="dropzone">
           <svg class="icon-svg text-primary mb-2" width="48" height="48" viewBox="0 0 16 16">
@@ -62,8 +71,8 @@
             <path
               d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z" />
           </svg>
-          <div class="fw-bold fs-6 text-dark mb-1">將檔案、子資料夾或 .zip 壓縮檔拖曳至此處</div>
-          <div class="small text-muted mb-3">支援拖入「個人成績」、「作答反應」、「班平均」、「答對率」或整個評量目錄</div>
+          <div class="fw-bold fs-6 text-dark mb-1">將 SAAA 評量檔案、資料夾或 .zip 壓縮檔拖曳至此處</div>
+          <div class="small text-muted mb-3">支援拖入「個人成績」、「作答反應」、「答對率」、「班平均」、「各校等級」、「試題分析」等多型態報表目錄</div>
           <div class="d-flex justify-content-center gap-2">
             <button class="btn btn-outline-primary btn-sm px-3" type="button"
               onclick="document.getElementById('folderInput').click()">
@@ -92,37 +101,131 @@
             <div class="col-4 col-md-2">
               <div class="summary-card">
                 <div class="summary-num" id="sumTotal">0</div>
-                <div class="summary-label">總檔案數</div>
+                <div class="summary-label">總評量檔案</div>
               </div>
             </div>
             <div class="col-4 col-md-2">
               <div class="summary-card">
                 <div class="summary-num text-primary" id="sumPersonal">0</div>
-                <div class="summary-label">個人成績</div>
+                <div class="summary-label">個人成績 (卡片表)</div>
               </div>
             </div>
             <div class="col-4 col-md-2">
               <div class="summary-card">
                 <div class="summary-num text-info" id="sumResponse">0</div>
-                <div class="summary-label">作答反應</div>
+                <div class="summary-label">作答反應 (選答)</div>
               </div>
             </div>
             <div class="col-4 col-md-2">
               <div class="summary-card">
                 <div class="summary-num text-success" id="sumAccuracy">0</div>
-                <div class="summary-label">答對率/等級</div>
+                <div class="summary-label">答對率與等級</div>
               </div>
             </div>
             <div class="col-4 col-md-2">
               <div class="summary-card">
                 <div class="summary-num text-warning" id="sumAverage">0</div>
-                <div class="summary-label">班平均</div>
+                <div class="summary-label">班平均彙整</div>
               </div>
             </div>
             <div class="col-4 col-md-2">
               <div class="summary-card">
                 <div class="summary-num text-secondary" id="sumAnalysis">0</div>
-                <div class="summary-label">試題分析</div>
+                <div class="summary-label">試題分析 (校/縣)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SAAA 評量資料型態規格與去識別化對照手冊 (可展開) -->
+        <div class="accordion mt-3" id="saaaAccordion">
+          <div class="accordion-item border rounded-3 overflow-hidden shadow-none" style="border-color: #cbd5e1 !important;">
+            <h3 class="accordion-header" id="headingTypes">
+              <button class="accordion-button collapsed py-2 px-3 fw-semibold text-secondary bg-light" type="button"
+                data-bs-toggle="collapse" data-bs-target="#collapseTypes" aria-expanded="false" aria-controls="collapseTypes"
+                style="font-size: 13px;">
+                <svg class="icon-svg text-primary me-2" width="16" height="16" viewBox="0 0 16 16">
+                  <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
+                </svg>
+                <span>📘 SAAA 評量資料型態結構與去識別化對照說明（點擊展開查看 7 大類 Excel 與 PDF 規格）</span>
+              </button>
+            </h3>
+            <div id="collapseTypes" class="accordion-collapse collapse" aria-labelledby="headingTypes" data-bs-parent="#saaaAccordion">
+              <div class="accordion-body p-3 bg-white" style="font-size: 12.5px; line-height: 1.6;">
+                <div class="table-responsive mb-2">
+                  <table class="table table-bordered table-sm align-middle mb-0" style="font-size: 12px;">
+                    <thead class="table-light text-secondary">
+                      <tr>
+                        <th style="width: 14%;">資料型態</th>
+                        <th style="width: 25%;">模擬檔案命名範例</th>
+                        <th style="width: 23%;">工作表結構特徵</th>
+                        <th style="width: 18%;">主要個資與機敏欄位</th>
+                        <th style="width: 20%;">工具去識別化策略</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="fw-bold text-primary">1. 個人成績</td>
+                        <td><code>115年度_半導體國小501班_數學5年級_個人成績.xlsx</code></td>
+                        <td>每班 1 檔，每生獨立 1 Sheet（如「劉捷成績」），採卡片式佈局</td>
+                        <td>Sheet標籤、學生姓名(B3)、座號(D3)、學校(B2)、縣市(B1)</td>
+                        <td>Sheet轉代碼/序號；姓名轉跨科代碼或<code>--</code>；座號依設定清除；保留F3等級描述</td>
+                      </tr>
+                      <tr>
+                        <td class="fw-bold text-info">2. 作答反應</td>
+                        <td><code>115年度_半導體國小_數學5年級_作答反應.xlsx</code></td>
+                        <td>單一表，橫向展開學生每題原始選答（1~4）</td>
+                        <td>學校代碼、學校名稱、<strong>學生代碼（實存真實姓名）</strong>、性別</td>
+                        <td>學校代碼轉<code>999999</code>；校名轉別名；學生代碼轉跨科假名（如<code>STU_115_0001</code>）或於公開模式徹底移除</td>
+                      </tr>
+                      <tr>
+                        <td class="fw-bold text-success">3. 答對率與等級</td>
+                        <td><code>115年度_半導體國小_數學5年級_答對率.xlsx</code></td>
+                        <td>單一表，整體答對率、縣市/全國PR、等級、向度答對率</td>
+                        <td>學校代碼、學校名稱、<strong>學生代碼（實存真實姓名）</strong>、性別</td>
+                        <td>學校代碼轉<code>999999</code>；校名轉別名；姓名脫敏為跨科假名；保留PR值與各向度能力百分比</td>
+                      </tr>
+                      <tr>
+                        <td class="fw-bold text-warning">4. 班平均</td>
+                        <td><code>115年度_半導體國小_數學_5年級_班平均.xlsx</code></td>
+                        <td>單一表，全校各班級整體與各能力向度之平均數據</td>
+                        <td>學校代碼、學校名稱（無個別學生姓名與座號）</td>
+                        <td>學校代碼轉<code>999999</code>；學校名稱轉別名；檔名同步脫敏</td>
+                      </tr>
+                      <tr>
+                        <td class="fw-bold text-secondary">5. 各校等級資料</td>
+                        <td><code>115年度_半導體國小_數學_5年級_各校等級資料.xlsx</code></td>
+                        <td>單一表，多層合併表頭，統計精熟/基礎/待加強人數與比例</td>
+                        <td>學校名稱、表末備註校名（無個別學生資料）</td>
+                        <td>學校名稱替換為別名；檔名同步脫敏</td>
+                      </tr>
+                      <tr>
+                        <td class="fw-bold text-secondary">6. 學校試題分析</td>
+                        <td><code>115年度_半導體國小_學校試題分析.xlsx</code></td>
+                        <td>工作表為科目年級（如「數學5年級」），題號、答對率、選項分佈</td>
+                        <td>檔名與標題列學校名稱（無個別學生資料）</td>
+                        <td>脫敏標題列與檔名中校名，保留題項選答分佈供診斷</td>
+                      </tr>
+                      <tr>
+                        <td class="fw-bold text-secondary">7. 縣市試題分析</td>
+                        <td><code>115年度_科技縣_縣市試題分析.xlsx</code></td>
+                        <td>工作表為科目年級，題號、鑑別度、答對率、選項選答分佈</td>
+                        <td>檔名與標題列縣市名稱（如「科技縣」）</td>
+                        <td>縣市名稱替換為「測試縣」，保留常模鑑別度與難度數據</td>
+                      </tr>
+                      <tr class="table-light">
+                        <td class="fw-bold text-muted">8. 題本與結案報告 (PDF)</td>
+                        <td><code>114年度...結案報告_數學5年級.pdf</code>、<code>115年度...題本.pdf</code></td>
+                        <td>PDF 格式公開試卷題本與結案研究總結報告</td>
+                        <td>無個別學生個人隱私資料（屬公開參考材料）</td>
+                        <td>供教師研讀試題脈絡與評量目標；批次脫敏自動聚焦於含個資之 Excel 數據檔案</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="alert alert-light border p-2 mb-0 rounded" style="font-size: 11.5px; color: #475569;">
+                  💡 <b>SAAA 特殊架構提醒：</b>SAAA 系統匯出的「作答反應」與「答對率」Excel 清單中，標題為「學生代碼」的欄位實存學生真實中文姓名（如「劉捷」）。本工具已專案適配該特徵，能精準與「個人成績」卡片表跨檔對齊，確保研究模式中同一學生在不同檔案均分配完全相同的跨科代號。
+                </div>
               </div>
             </div>
           </div>
@@ -140,13 +243,16 @@
           </svg>
           步驟 2：選擇去識別化模式
         </h2>
+        <p class="small text-muted mb-3">
+          📌 請依據後續分析或發布需求選擇模式。「研究分析模式」適合交付 AI 代理進行跨科分析，會將學生姓名轉為跨科一致假名代碼，並生成離線對照表；「公開資料模式」則徹底抹除姓名與座號，不保留任何可逆對照。
+        </p>
 
         <div class="row g-3">
-          <!-- 模式 1 -->
-          <div class="col-md-4">
+          <!-- 模式 1：研究分析模式 -->
+          <div class="col-md-6">
             <div class="mode-card active" onclick="setMode('research')">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="badge badge-soft-primary px-2 py-1 rounded">學術/研究</span>
+                <span class="badge badge-soft-primary px-2 py-1 rounded">學術/研究分析</span>
                 <svg class="icon-svg text-primary" width="20" height="20" viewBox="0 0 16 16">
                   <path
                     d="M5.5 12a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm-1.5-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 1 0v-1a.5.5 0 0 0-.5-.5zm6.5 1a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm-1.5-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 1 0v-1a.5.5 0 0 0-.5-.5z" />
@@ -154,42 +260,26 @@
                     d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z" />
                 </svg>
               </div>
-              <h3 class="h6 fw-bold mb-1 text-dark">🔬 研究分析模式 (推薦)</h3>
-              <p class="small text-muted m-0">學生姓名轉為跨科一致代號 (如 <code>STU_112_0001</code>)，自動產出
-                <code>mapping_table.xlsx</code> 對照總表，移除座號並脫敏校名與縣市。
+              <h3 class="h6 fw-bold mb-1 text-dark">🔬 研究分析模式（推薦交付 AI 分析）</h3>
+              <p class="small text-muted m-0">
+                將學生真實姓名轉為跨科一致的假名代號（如 <code>STU_115_0001</code>），使「個人成績」、「作答反應」與「答對率」中的同一學生代碼完全對齊。系統自動產出 <code>mapping_table.xlsx</code> 對照總表（供校端行政人員離線加密保管，切勿交給外部 AI），座號依設定移除，校名與縣市全數脫敏。
               </p>
             </div>
           </div>
 
-          <!-- 模式 2 -->
-          <div class="col-md-4">
+          <!-- 模式 2：公開資料模式 -->
+          <div class="col-md-6">
             <div class="mode-card" onclick="setMode('public')">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="badge badge-soft-success px-2 py-1 rounded">開放資料</span>
+                <span class="badge badge-soft-success px-2 py-1 rounded">開放資料/零留存</span>
                 <svg class="icon-svg text-success" width="20" height="20" viewBox="0 0 16 16">
                   <path
                     d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 5a9.29 9.29 0 0 0-.464 2H1.08A7.002 7.002 0 0 1 4.09 5zm-.464 3c.043.688.196 1.36.464 2H1.08a7.002 7.002 0 0 1 0-4h2.546zm.464 3a9.29 9.29 0 0 0 1.055 2H4.09A7.002 7.002 0 0 1 1.08 11h2.546z" />
                 </svg>
               </div>
-              <h3 class="h6 fw-bold mb-1 text-dark">🌐 公開資料模式</h3>
-              <p class="small text-muted m-0">徹底剔除姓名與座號欄位，校名與縣市脫敏，不保留任何可逆對照表（適用於政府公開資料、新聞稿發布）。</p>
-            </div>
-          </div>
-
-          <!-- 模式 3 -->
-          <div class="col-md-4">
-            <div class="mode-card" onclick="setMode('mask')">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="badge badge-soft-warning px-2 py-1 rounded">校內教學</span>
-                <svg class="icon-svg text-warning" width="20" height="20" viewBox="0 0 16 16">
-                  <path
-                    d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755l.191.195zM11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829z" />
-                  <path
-                    d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.708zm10.296 8.884-12-12 .708-.708 12 12-.708.708z" />
-                </svg>
-              </div>
-              <h3 class="h6 fw-bold mb-1 text-dark">🛡️ 校內遮罩模式</h3>
-              <p class="small text-muted m-0">學生姓名規則遮罩 (如 <code>林*偉</code>)，工作表標籤遮罩為 (<code>林*偉成績</code>)，保留原表欄位與座號結構。
+              <h3 class="h6 fw-bold mb-1 text-dark">🌐 公開資料模式（不可逆最高隱私）</h3>
+              <p class="small text-muted m-0">
+                徹底剔除學生姓名與座號欄位，個人成績 Sheet 標籤轉為客觀流水序號（如 <code>學生_1成績</code>）。校名與縣市脫敏，不產出任何對照表，不可逆且零個資留存（適用於政府資料開放、教育新聞稿或直接公開分享）。
               </p>
             </div>
           </div>
@@ -208,25 +298,35 @@
           </svg>
           步驟 3：機關別名與參數微調
         </h2>
+        <p class="small text-muted mb-3">
+          📌 學校名稱由系統從安全別名池中隨機指派，學校代碼固定為虛擬代號 999999，縣市可選擇「測試縣」或「測試市」。您可指定座號欄位之保留原則，並選擇匯出格式（包含適合 LLM Prompt 直接讀取之 Markdown 格式）。
+        </p>
 
         <div class="row g-3">
           <div class="col-lg-3 col-md-6 col-sm-6">
-            <label class="form-label small fw-semibold text-secondary" for="schoolAlias">學校替換名稱：</label>
-            <input type="text" class="form-control form-control-sm" id="schoolAlias" value="半導體國小">
+            <label class="form-label small fw-semibold text-secondary" for="schoolAlias">學校替換名稱（隨機安全池）：</label>
+            <input type="text" class="form-control form-control-sm" id="schoolAlias" value="" readonly
+              style="background-color: #f1f5f9; cursor: not-allowed;">
+            <div class="form-text" style="font-size: 11px;">系統自動隨機指派，不可手動輸入以杜絕真校名外洩</div>
           </div>
           <div class="col-lg-2 col-md-6 col-sm-6">
             <label class="form-label small fw-semibold text-secondary" for="schoolCodeAlias">學校代碼別名：</label>
-            <input type="text" class="form-control form-control-sm" id="schoolCodeAlias" value="999999">
+            <input type="text" class="form-control form-control-sm" id="schoolCodeAlias" value="999999" readonly
+              style="background-color: #f1f5f9; cursor: not-allowed;">
+            <div class="form-text" style="font-size: 11px;">固定為 999999，符合行政相容標準</div>
           </div>
           <div class="col-lg-2 col-md-4 col-sm-6">
             <label class="form-label small fw-semibold text-secondary" for="countyAlias">縣市替換別名：</label>
-            <input type="text" class="form-control form-control-sm" id="countyAlias" value="科技縣">
+            <select class="form-select form-select-sm" id="countyAlias">
+              <option value="測試縣" selected>測試縣</option>
+              <option value="測試市">測試市</option>
+            </select>
           </div>
           <div class="col-lg-2 col-md-4 col-sm-6">
             <label class="form-label small fw-semibold text-secondary" for="seatOption">座號欄位處理：</label>
             <select class="form-select form-select-sm" id="seatOption">
-              <option value="drop">移除座號</option>
-              <option value="keep">保留座號</option>
+              <option value="drop" selected>移除座號 (最高安全)</option>
+              <option value="keep">保留座號 (校內核對)</option>
             </select>
           </div>
           <div class="col-lg-3 col-md-4 col-sm-6">
@@ -251,12 +351,15 @@
         <path
           d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z" />
       </svg>
-      開始執行去識別化並打包下載
+      步驟 4：開始執行去識別化並打包下載
     </button>
 
     <!-- 進度與日誌區塊 -->
     <section id="progressSection" class="card shadow-sm border-0 mb-4 rounded-3 d-none">
       <div class="card-body p-4">
+        <p class="small text-muted mb-3">
+          📌 點擊上方按鈕後，系統於瀏覽器本機記憶體中依序執行 3 大階段：全域掃描個人資料並建立跨表代碼對齊（適配「個人成績」卡片與「作答反應/答對率」清單）→ 逐檔執行欄位脫敏、Sheet標籤更名與多格式轉換（Excel/JSON/Markdown）→ 全域隱私安全審計並自動封裝 ZIP 下載。全程 100% 離線，資料絕不離開您的電腦。
+        </p>
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="small fw-bold text-secondary" id="progressText">準備中...</span>
           <span class="badge bg-primary rounded-pill px-2 py-1" id="progressPercent">0%</span>
@@ -276,7 +379,7 @@
           d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
       </svg>
       <h3 class="h5 alert-heading fw-bold text-success mb-1">去識別化處理完成！</h3>
-      <p class="small text-secondary mb-3" id="resultDesc">所有檔案已通過全域隱私安全審計，ZIP 壓縮檔已自動開始下載。</p>
+      <p class="small text-secondary mb-3" id="resultDesc">所有檔案已通過全域隱私安全審計（0 洩漏），ZIP 壓縮檔已自動觸發下載。若為研究分析模式，請將解壓後之 <code>mapping_table.xlsx</code> 獨立留存，切勿交予外部 AI 模型。</p>
       <button class="btn btn-success px-4 rounded-pill shadow-sm" onclick="downloadZipAgain()">
         <svg class="icon-svg me-1" width="16" height="16" viewBox="0 0 16 16">
           <path
@@ -293,6 +396,9 @@
   <!-- 頁尾宣告 Footer -->
   <footer class="footer-custom py-4 mt-5 border-top text-center text-muted bg-white">
     <div class="container">
+      <div class="small text-danger fw-semibold mb-2">
+        ⚠️ 本專案僅適用於「學生學習能力檢測（SAAA）」下載之評量資料，請勿使用其他來源之資料。
+      </div>
       <div class="small fw-semibold text-dark">
         © 國立臺中教育大學 | 測驗統計與適性學習研究中心 | 縣市學生學習能力檢測計畫
       </div>

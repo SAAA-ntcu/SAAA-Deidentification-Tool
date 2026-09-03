@@ -13,6 +13,10 @@ const AppState = {
     '新竹縣', '新竹市', '臺北市', '新北市', '桃園市', '臺中市', '臺南市',
     '高雄市', '苗栗縣', '彰化縣', '南投縣', '雲林縣', '嘉義縣', '嘉義市',
     '屏東縣', '宜蘭縣', '花蓮縣', '臺東縣', '澎湖縣', '金門縣', '連江縣', '基隆市'
+  ],
+  schoolAliasPool: [
+    '日月潭國小', '阿里山國小', '玉山國小', '太魯閣國小', '墾丁國小',
+    '合歡山國小', '奇美國小', '雪霸國小', '陽明山國小', '綠島國小'
   ]
 };
 
@@ -194,7 +198,8 @@ function triggerDownload(blob, filename) {
 
 class StudentMapper {
   constructor() {
-    this.mapping = new Map(); // key: `${year}_${grade}_${class}_${seat}_${name}` -> STU_112_0001
+    this.mapping = new Map();     // key: `${year}_${grade}_${class}_${seat}_${name}` -> STU_112_0001
+    this.nameMapping = new Map(); // key: `${year}_${grade}_${class}_${name}` -> STU_112_0001 (跨表對齊)
     this.reverseInfo = [];
     this.counters = {};
   }
@@ -205,16 +210,32 @@ class StudentMapper {
     const c = normalizeClass(classNum);
     const s = normalizeSeat(seatNum);
     const n = name ? String(name).trim() : '';
-    const key = `${y}_${g}_${c}_${s}_${n}`;
+    if (!n) return '';
 
-    if (this.mapping.has(key)) {
-      return this.mapping.get(key);
+    const exactKey = `${y}_${g}_${c}_${s}_${n}`;
+    const broadKey = `${y}_${g}_${c}_${n}`;
+
+    if (this.mapping.has(exactKey)) {
+      return this.mapping.get(exactKey);
+    }
+    if (this.nameMapping.has(broadKey)) {
+      const existingId = this.nameMapping.get(broadKey);
+      this.mapping.set(exactKey, existingId);
+      const item = this.reverseInfo.find(r => r.學生代碼 === existingId);
+      if (item) {
+        if (!item.座號 && s) item.座號 = s;
+        if (!item.學校代碼 && schoolCode) item.學校代碼 = schoolCode;
+        if (!item.原學校名稱 && schoolName) item.原學校名稱 = schoolName;
+        if (!item.性別 && gender) item.性別 = gender;
+      }
+      return existingId;
     }
 
     this.counters[y] = (this.counters[y] || 0) + 1;
     const seq = String(this.counters[y]).padStart(4, '0');
     const stuId = `STU_${y}_${seq}`;
-    this.mapping.set(key, stuId);
+    this.mapping.set(exactKey, stuId);
+    this.nameMapping.set(broadKey, stuId);
 
     this.reverseInfo.push({
       學年度: y,
@@ -238,7 +259,7 @@ class StudentMapper {
 function setMode(mode) {
   AppState.currentMode = mode;
   document.querySelectorAll('.mode-card').forEach((el, idx) => {
-    if ((mode === 'research' && idx === 0) || (mode === 'public' && idx === 1) || (mode === 'mask' && idx === 2)) {
+    if ((mode === 'research' && idx === 0) || (mode === 'public' && idx === 1)) {
       el.classList.add('active');
     } else {
       el.classList.remove('active');
@@ -313,6 +334,8 @@ async function handleIncomingFiles(fileList) {
   updateSummary();
   document.getElementById('startBtn').disabled = AppState.loadedFiles.length === 0;
 
+  randomizeSchoolAlias();
+
   // SweetAlert2 Toast 載入提示
   if (typeof Swal !== 'undefined' && AppState.loadedFiles.length > 0) {
     Swal.fire({
@@ -381,9 +404,9 @@ async function runDeidentification() {
   document.getElementById('progressSection').classList.remove('d-none');
   document.getElementById('resultBox').classList.add('d-none');
 
-  const schoolAlias = document.getElementById('schoolAlias').value.trim() || '半導體國小';
-  const schoolCodeAlias = document.getElementById('schoolCodeAlias').value.trim() || '999999';
-  const countyAlias = document.getElementById('countyAlias').value.trim() || '科技縣';
+  const schoolAlias = document.getElementById('schoolAlias').value.trim() || AppState.schoolAliasPool[0];
+  const schoolCodeAlias = '999999';
+  const countyAlias = document.getElementById('countyAlias').value || '測試縣';
   const keepSeat = document.getElementById('seatOption').value === 'keep';
   const exportFormat = document.getElementById('exportFormat') ? document.getElementById('exportFormat').value : 'both';
 
@@ -416,12 +439,16 @@ async function runDeidentification() {
           const cLbl = ws['A3'] ? ws['A3'].v : null;
           if (cLbl === '學生姓名') {
             const name = ws['B3'] ? ws['B3'].v : '';
-            const grade = ws['D3'] ? ws['D3'].v : '';
-            const seat = ws['F3'] ? ws['F3'].v : '';
+            const grade = ws['D2'] ? ws['D2'].v : (ws['D3'] ? ws['D3'].v : '');
+            const classNum = ws['F2'] ? ws['F2'].v : (ws['E2'] ? ws['E2'].v : '');
+            const seat = ws['D3'] ? ws['D3'].v : (ws['F3'] ? ws['F3'].v : '');
             const school = ws['B2'] ? ws['B2'].v : '';
-            const classNum = ws['E2'] ? ws['E2'].v : '';
+            const county = ws['B1'] ? ws['B1'].v : '';
             if (name) originalNames.add(String(name).trim());
             if (school && String(school).trim() !== schoolAlias) originalSchools.add(String(school).trim());
+            if (county && !AppState.counties.includes(String(county).trim()) && String(county).trim() !== countyAlias) {
+              AppState.counties.push(String(county).trim());
+            }
             if (config.mode === 'research' && name) {
               mapper.getOrCreateId(year, grade, classNum, seat, name, '', school);
             }
@@ -431,7 +458,9 @@ async function runDeidentification() {
           const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
           if (rows.length < 2) continue;
           const headers = rows[0].map(c => String(c).trim());
-          const idxName = headers.indexOf('姓名');
+          let idxName = headers.indexOf('姓名');
+          if (idxName === -1) idxName = headers.indexOf('學生姓名');
+          if (idxName === -1) idxName = headers.indexOf('學生代碼');
           if (idxName === -1) continue;
 
           const idxCode = headers.indexOf('學校代碼');
@@ -492,10 +521,10 @@ async function runDeidentification() {
         const cLbl = ws['A3'] ? ws['A3'].v : null;
         if (cLbl === '學生姓名') {
           const name = ws['B3'] ? ws['B3'].v : '';
-          const grade = ws['D3'] ? ws['D3'].v : '';
-          const seat = ws['F3'] ? ws['F3'].v : '';
+          const grade = ws['D2'] ? ws['D2'].v : (ws['D3'] ? ws['D3'].v : '');
+          const classNum = ws['F2'] ? ws['F2'].v : (ws['E2'] ? ws['E2'].v : '');
+          const seat = ws['D3'] ? ws['D3'].v : (ws['F3'] ? ws['F3'].v : '');
           const school = ws['B2'] ? ws['B2'].v : '';
-          const classNum = ws['E2'] ? ws['E2'].v : '';
 
           let newSheetName = sheetName;
           let stuId = '';
@@ -519,7 +548,7 @@ async function runDeidentification() {
                 else if (config.mode === 'mask') row[c] = maskChineseName(String(name), '*');
                 else if (config.mode === 'public') row[c] = '--';
               }
-              else if (r === 2 && c === 5 && !config.keepSeat && config.mode !== 'mask') {
+              else if (r === 2 && c === 3 && !config.keepSeat && config.mode !== 'mask') {
                 row[c] = '';
               }
               else if (typeof row[c] === 'string') {
@@ -540,9 +569,11 @@ async function runDeidentification() {
         }
 
         const headers = rows[0].map(c => String(c).trim());
-        const idxName = headers.indexOf('姓名');
+        let idxName = headers.indexOf('姓名');
+        if (idxName === -1) idxName = headers.indexOf('學生姓名');
+        if (idxName === -1) idxName = headers.indexOf('學生代碼');
 
-        // 型態 A：標準學生名冊清單
+        // 型態 A：標準學生名冊清單 (含 作答反應 與 答對率)
         if (idxName !== -1) {
           const idxCode = headers.indexOf('學校代碼');
           const idxSchool = headers.indexOf('學校名稱');
@@ -559,10 +590,10 @@ async function runDeidentification() {
             const h = headers[c];
             if (config.mode === 'research') {
               if (h === '座號' && !config.keepSeat) continue;
-              newHeader.push(h === '姓名' ? '學生代碼' : h);
+              newHeader.push(c === idxName ? '學生代碼' : h);
               keepIdx.push(c);
             } else if (config.mode === 'public') {
-              if (h === '姓名' || h === '座號') continue;
+              if (c === idxName || h === '座號') continue;
               newHeader.push(h);
               keepIdx.push(c);
             } else if (config.mode === 'mask') {
@@ -591,7 +622,7 @@ async function runDeidentification() {
 
               if (h === '學校代碼') val = schoolCodeAlias;
               else if (h === '學校名稱' || h === '學校') val = schoolAlias;
-              else if (h === '姓名') {
+              else if (origIdx === idxName) {
                 if (config.mode === 'research') {
                   val = mapper.getOrCreateId(year, grade, classNum, seat, name, code, school, gender);
                 } else if (config.mode === 'mask') {
@@ -746,8 +777,15 @@ function downloadZipAgain() {
   }
 }
 
-// 頁面初始化註冊事件
+function randomizeSchoolAlias() {
+  const pool = AppState.schoolAliasPool;
+  const picked = pool[Math.floor(Math.random() * pool.length)];
+  document.getElementById('schoolAlias').value = picked;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  randomizeSchoolAlias();
+
   const dropzone = document.getElementById('dropzone');
   if (dropzone) {
     dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
