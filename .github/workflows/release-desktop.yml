@@ -1,0 +1,237 @@
+name: Build & Release Desktop Apps (Windows & macOS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: '是否直接建立 GitHub Release (true/false)'
+        required: true
+        default: 'false'
+        type: boolean
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  # ==========================================
+  # 1. Windows 建置：產出 .msi (WiX) 與 .exe (NSIS)
+  # ==========================================
+  build-windows:
+    name: 打包 Windows 安裝檔 (.msi & .exe)
+    runs-on: windows-latest
+    steps:
+      - name: 檢出原始碼 (Checkout)
+        uses: actions/checkout@v4
+
+      - name: 安裝 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'tauri-app/package-lock.json'
+
+      - name: 安裝 Rust 工具鏈
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 快取 Cargo 相依套件
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            tauri-app/src-tauri/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('tauri-app/src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: 安裝前端套件
+        run: |
+          cd tauri-app
+          npm ci
+
+      - name: 建置 Windows 應用程式與安裝檔 (.msi & .exe)
+        run: |
+          cd tauri-app
+          npx tauri build --ci
+
+      - name: 收集 Windows 安裝檔產物
+        shell: bash
+        run: |
+          mkdir -p dist-windows
+          # 複製 MSI 安裝檔
+          find tauri-app/src-tauri/target/release/bundle/msi -name "*.msi" -exec cp {} dist-windows/ \; 2>/dev/null || true
+          # 複製 NSIS (.exe) 安裝檔
+          find tauri-app/src-tauri/target/release/bundle/nsis -name "*.exe" -exec cp {} dist-windows/ \; 2>/dev/null || true
+          echo "Windows 產物清單："
+          ls -lh dist-windows
+
+      - name: 上傳 Windows 產物到 Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAAA-Tool-Windows
+          path: dist-windows/*
+          if-no-files-found: error
+
+  # ==========================================
+  # 2. macOS 建置：產出 .dmg 與 .app
+  # ==========================================
+  build-macos:
+    name: 打包 macOS 安裝檔 (.dmg)
+    runs-on: macos-latest
+    steps:
+      - name: 檢出原始碼 (Checkout)
+        uses: actions/checkout@v4
+
+      - name: 安裝 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'tauri-app/package-lock.json'
+
+      - name: 安裝 Rust 工具鏈
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 快取 Cargo 相依套件
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            tauri-app/src-tauri/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('tauri-app/src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: 安裝前端套件
+        run: |
+          cd tauri-app
+          npm ci
+
+      - name: 建置 macOS .app bundle
+        run: |
+          cd tauri-app
+          npx tauri build --bundles app --ci
+
+      - name: 封裝 macOS .dmg 安裝映像檔
+        run: |
+          mkdir -p dist-macos
+          APP_DIR=$(find tauri-app/src-tauri/target/release/bundle/macos -name "*.app" -type d | head -n 1)
+          if [ -n "$APP_DIR" ]; then
+            echo "找到 App: $APP_DIR"
+            TMP_DIR=$(mktemp -d)
+            cp -R "$APP_DIR" "$TMP_DIR/"
+            ln -s /Applications "$TMP_DIR/Applications"
+            hdiutil create -volname "SAAA去識別化工具" -srcfolder "$TMP_DIR" -ov -format UDZO dist-macos/SAAA_Deidentification_Tool_macOS.dmg
+            rm -rf "$TMP_DIR"
+            # 另外壓縮一份 .app.zip 備用
+            ditto -c -k --keepParent "$APP_DIR" dist-macos/SAAA_Deidentification_Tool_macOS.app.zip
+          else
+            echo "未找到 .app 目錄！"
+            exit 1
+          fi
+          echo "macOS 產物清單："
+          ls -lh dist-macos
+
+      - name: 上傳 macOS 產物到 Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAAA-Tool-macOS
+          path: dist-macos/*
+          if-no-files-found: error
+
+  # ==========================================
+  # 3. 網頁離線版封裝 (ZIP)
+  # ==========================================
+  build-offline-zip:
+    name: 打包純網頁離線版 (ZIP)
+    runs-on: ubuntu-latest
+    steps:
+      - name: 檢出原始碼 (Checkout)
+        uses: actions/checkout@v4
+
+      - name: 封裝離線工具包 ZIP
+        run: |
+          mkdir -p dist-web
+          cd SAAA去識別化工具
+          zip -r ../dist-web/SAAA_Deidentification_Tool_Offline.zip ./*
+          cd ..
+          ls -lh dist-web
+
+      - name: 上傳離線版 ZIP 到 Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAAA-Tool-Offline-Web
+          path: dist-web/*
+          if-no-files-found: error
+
+  # ==========================================
+  # 4. 發布 GitHub Release (當有 tag 或手動指定時)
+  # ==========================================
+  publish-release:
+    name: 自動建立並發布 GitHub Release
+    needs: [build-windows, build-macos, build-offline-zip]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.create_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 檢出原始碼 (Checkout)
+        uses: actions/checkout@v4
+
+      - name: 下載所有建置產物 (Windows, macOS, Web)
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: 檢查待發布檔案清單
+        run: |
+          echo "=== 待發布 Release 檔案清單 ==="
+          ls -lh release-assets
+
+      - name: 設定 Release 標籤與名稱
+        id: vars
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG_NAME="${{ github.ref_name }}"
+          else
+            TAG_NAME="v2.0.0-build-$(date +'%Y%m%d%H%M')"
+          fi
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: 發布 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag_name }}
+          files: release-assets/*
+          name: SAAA 學生學習能力檢測去識別化工具 ${{ steps.vars.outputs.tag_name }}
+          body: |
+            ## 🎓 SAAA 學生學習能力檢測去識別化工具 v2.0 發布
+
+            本工具提供全平台單機原生應用程式與純前端離線運行方案，**100% 離線本地運算，零個資外洩風險**。
+
+            ---
+
+            ### 📥 下載與安裝說明
+
+            #### 🪟 Windows 使用者（國小/國中教師與資訊組長）：
+            - **一般教師推薦**：下載 `*.exe`（NSIS 繁體中文一鍵安裝檔），雙擊即可自動安裝並建立桌面捷徑。
+            - **電腦教室大量派送**：下載 `*.msi`（Windows Installer 套裝封裝檔），支援網域群組原則 (GPO) 安裝。
+
+            #### 🍎 macOS 使用者：
+            - 下載 `SAAA_Deidentification_Tool_macOS.dmg`，雙擊開啟後將工具拖入「應用程式 (Applications)」資料夾即可。
+            - 若偏好壓縮檔，可下載 `SAAA_Deidentification_Tool_macOS.app.zip`。
+
+            #### 🌐 免安裝純網頁離線版（全平台通用）：
+            - 下載 `SAAA_Deidentification_Tool_Offline.zip`，解壓縮後直接用 Chrome、Edge 或 Safari 雙擊開啟 `index.html` 即可運行！
+
+            ---
+            *測驗統計與適性學習研究中心 謹製*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
