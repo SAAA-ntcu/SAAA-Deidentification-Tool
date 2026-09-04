@@ -159,7 +159,7 @@ jobs:
         run: |
           mkdir -p dist-web
           cd SAAA去識別化工具
-          zip -r ../dist-web/SAAA_Deidentification_Tool_Offline.zip ./*
+          zip -r ../dist-web/SAAA_Deidentification_Tool_Offline.zip ./index.html ./css ./js ./lib ./README.md -x "*.DS_Store*"
           cd ..
           ls -lh dist-web
 
