@@ -17,10 +17,10 @@ permissions:
 
 jobs:
   # ==========================================
-  # 1. Windows 建置：產出 .exe (NSIS 繁體中文一鍵安裝)
+  # 1. Windows 建置：產出 .exe (NSIS) 與 .msi (WiX)
   # ==========================================
   build-windows:
-    name: 打包 Windows 安裝檔 (.exe)
+    name: 打包 Windows 安裝檔 (.exe & .msi)
     runs-on: windows-latest
     steps:
       - name: 檢出原始碼 (Checkout)
@@ -54,16 +54,18 @@ jobs:
           cd tauri-app
           npm ci
 
-      - name: 建置 Windows 應用程式與安裝檔 (.exe)
+      - name: 建置 Windows 應用程式與安裝檔 (.exe & .msi)
         run: |
           cd tauri-app
-          npx tauri build --bundles nsis --ci
+          npx tauri build --bundles nsis,msi --ci
 
       - name: 收集 Windows 安裝檔產物
         shell: bash
         run: |
           mkdir -p dist-windows
-          # 複製 NSIS (.exe) 繁體中文一鍵安裝檔
+          # 複製 MSI (WiX) 安裝檔
+          find tauri-app/src-tauri/target/release/bundle/msi -name "*.msi" -exec cp {} dist-windows/ \; 2>/dev/null || true
+          # 複製 NSIS (.exe) 安裝檔
           find tauri-app/src-tauri/target/release/bundle/nsis -name "*.exe" -exec cp {} dist-windows/ \; 2>/dev/null || true
           echo "Windows 產物清單："
           ls -lh dist-windows

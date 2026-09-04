@@ -1,6 +1,6 @@
 [package]
 name = "saaa-deidentification-tool"
-version = "2.0.0"
+version = "2.1.0"
 description = "SAAA 學生學習能力檢測去識別化工具 - 桌面版"
 authors = ["SAAA-ntcu"]
 edition = "2021"
