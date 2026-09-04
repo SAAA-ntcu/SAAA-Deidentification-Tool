@@ -15,8 +15,8 @@ const AppState = {
     '屏東縣', '宜蘭縣', '花蓮縣', '臺東縣', '澎湖縣', '金門縣', '連江縣', '基隆市'
   ],
   schoolAliasPool: [
-    '日月潭國小', '阿里山國小', '玉山國小', '太魯閣國小', '墾丁國小',
-    '合歡山國小', '奇美國小', '雪霸國小', '陽明山國小', '綠島國小'
+    '輝達國小', '台積電國小', '谷歌國小', '微軟國小', '亞馬遜國小',
+    '特斯拉國小', '超微國小', '博通國小', '美光國小', '高通國小'
   ]
 };
 
@@ -781,6 +781,22 @@ function randomizeSchoolAlias() {
   const pool = AppState.schoolAliasPool;
   const picked = pool[Math.floor(Math.random() * pool.length)];
   document.getElementById('schoolAlias').value = picked;
+}
+
+/** 使用者點擊骰子重新抽換學校別名 */
+function reRollSchoolAlias() {
+  const input = document.getElementById('schoolAlias');
+  const pool = AppState.schoolAliasPool;
+  if (pool.length <= 1) {
+    if (input) input.value = pool[0];
+    return;
+  }
+  const current = input ? input.value : '';
+  let picked = current;
+  while (picked === current) {
+    picked = pool[Math.floor(Math.random() * pool.length)];
+  }
+  if (input) input.value = picked;
 }
 
 document.addEventListener('DOMContentLoaded', () => {

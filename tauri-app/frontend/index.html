@@ -314,9 +314,15 @@
         <div class="row g-3">
           <div class="col-lg-3 col-md-6 col-sm-6">
             <label class="form-label small fw-semibold text-secondary" for="schoolAlias">學校替換名稱（隨機安全池）：</label>
-            <input type="text" class="form-control form-control-sm" id="schoolAlias" value="" readonly
-              style="background-color: #f1f5f9; cursor: not-allowed;">
-            <div class="form-text" style="font-size: 11px;">系統自動隨機指派，不可手動輸入以杜絕真校名外洩</div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control" id="schoolAlias" value="" readonly
+                style="background-color: #f1f5f9; cursor: not-allowed;">
+              <button class="btn btn-outline-secondary" type="button" id="diceBtn" onclick="reRollSchoolAlias()"
+                title="重新擲骰，抽換一個新的學校別名" style="z-index: 0;">
+                🎲
+              </button>
+            </div>
+            <div class="form-text" style="font-size: 11px;">系統自動隨機指派，不可手動輸入以杜絕真校名外洩；點擊骰子 🎲 可重新抽換</div>
           </div>
           <div class="col-lg-2 col-md-6 col-sm-6">
             <label class="form-label small fw-semibold text-secondary" for="schoolCodeAlias">學校代碼別名：</label>
