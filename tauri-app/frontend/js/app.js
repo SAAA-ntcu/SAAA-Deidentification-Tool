@@ -178,6 +178,32 @@ function workbookToMarkdown(wb, title = '') {
   return md;
 }
 
+/** 將去識別化後的活頁簿轉為 UTF-8 (含 BOM) CSV 並寫入 ZIP */
+function writeWorkbookToCsv(zip, targetPath, wb) {
+  if (!wb || !wb.SheetNames || wb.SheetNames.length === 0) return;
+
+  if (wb.SheetNames.length === 1) {
+    const sheetName = wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+    if (ws && ws['!ref']) {
+      // 加上 \uFEFF (UTF-8 BOM) 確保 Excel 開啟繁體中文時不亂碼
+      const csvContent = '\uFEFF' + XLSX.utils.sheet_to_csv(ws);
+      const csvPath = targetPath.replace(/\.xlsx$/i, '.csv');
+      zip.file(csvPath, csvContent);
+    }
+  } else {
+    // 多個工作表時（如個人成績包含每位學生獨立 Sheet），為每個工作表輸出獨立 CSV
+    for (const sheetName of wb.SheetNames) {
+      const ws = wb.Sheets[sheetName];
+      if (!ws || !ws['!ref']) continue;
+      const safeSheetName = sanitizeSheetName(sheetName);
+      const csvContent = '\uFEFF' + XLSX.utils.sheet_to_csv(ws);
+      const csvPath = targetPath.replace(/\.xlsx$/i, `_${safeSheetName}.csv`);
+      zip.file(csvPath, csvContent);
+    }
+  }
+}
+
 /** 觸發檔案下載（Tauri 桌面模式 / 瀏覽器模式自動切換） */
 async function triggerDownload(blob, filename) {
   // Tauri 桌面 App 模式：使用系統另存新檔對話框
@@ -436,10 +462,17 @@ async function runDeidentification() {
 
   const config = { mode: AppState.currentMode, schoolAlias, schoolCodeAlias, countyAlias, keepSeat, exportFormat };
 
+  let formatLabel = 'Excel (.xlsx) + JSON (.json)';
+  if (exportFormat === 'all') formatLabel = '全格式打包 (Excel + CSV + JSON + MD)';
+  else if (exportFormat === 'xlsx') formatLabel = '僅 Excel (.xlsx)';
+  else if (exportFormat === 'csv') formatLabel = '僅 CSV (.csv)';
+  else if (exportFormat === 'json') formatLabel = '僅 JSON (.json)';
+  else if (exportFormat === 'md') formatLabel = '僅 Markdown (.md)';
+
   appendLog(`\n==================================================`);
   appendLog(` SAAA 去識別化引擎啟動 (模式: ${config.mode.toUpperCase()})`);
   appendLog(` 學校別名: ${schoolAlias} (${schoolCodeAlias}) | 縣市別名: ${countyAlias}`);
-  appendLog(` 輸出格式: ${exportFormat === 'both' ? 'Excel (.xlsx) + JSON (.json)' : (exportFormat === 'json' ? '僅 JSON (.json)' : '僅 Excel (.xlsx)')}`);
+  appendLog(` 輸出格式: ${formatLabel}`);
   appendLog(` 總檔案數: ${AppState.loadedFiles.length} 個`);
   appendLog(`==================================================`);
 
@@ -679,10 +712,14 @@ async function runDeidentification() {
       const targetPath = transformPath(f.relPath, originalSchools, schoolAlias, countyAlias);
       const newFileName = targetPath.split('/').pop();
 
-      // 依使用者選取之格式寫入 ZIP (Excel、JSON 和/或 Markdown)
+      // 依使用者選取之格式寫入 ZIP (Excel、CSV、JSON 和/或 Markdown)
       if (exportFormat === 'all' || exportFormat === 'both' || exportFormat === 'xlsx') {
         const outData = XLSX.write(newWb, { bookType: 'xlsx', type: 'array' });
         zip.file(targetPath, outData);
+      }
+
+      if (exportFormat === 'all' || exportFormat === 'csv') {
+        writeWorkbookToCsv(zip, targetPath, newWb);
       }
 
       if (exportFormat === 'all' || exportFormat === 'both' || exportFormat === 'json') {
@@ -708,7 +745,7 @@ async function runDeidentification() {
       }
     }
 
-    // 若為研究模式，輸出對照表 (Excel / JSON / Markdown)
+    // 若為研究模式，輸出對照表 (Excel / CSV / JSON / Markdown)
     if (config.mode === 'research' && mapper.reverseInfo.length > 0) {
       appendLog(`[對照表] 正在生成學生對照總表 mapping_table (共 ${mapper.reverseInfo.length} 筆)...`);
       
@@ -727,6 +764,11 @@ async function runDeidentification() {
       if (exportFormat === 'all' || exportFormat === 'both' || exportFormat === 'xlsx') {
         const mapData = XLSX.write(mapWb, { bookType: 'xlsx', type: 'array' });
         zip.file('mapping_table.xlsx', mapData);
+      }
+
+      if (exportFormat === 'all' || exportFormat === 'csv') {
+        const mapCsv = '\uFEFF' + XLSX.utils.sheet_to_csv(mapWs);
+        zip.file('mapping_table.csv', mapCsv);
       }
 
       if (exportFormat === 'all' || exportFormat === 'both' || exportFormat === 'json') {

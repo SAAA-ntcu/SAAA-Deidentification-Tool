@@ -115,10 +115,11 @@ Windows 老師可至 [GitHub Releases 發布頁面](https://github.com/SAAA-ntcu
 7. **縣市試題分析**（常模參考數據與鑑別度 100% 保留）
 
 支援多種輸出格式：
-- 🚀 **全格式打包**：同時產出 Excel (`.xlsx`) + JSON (`.json`) + Markdown (`.md`)
+- 🚀 **全格式打包**：同時產出 Excel (`.xlsx`) + CSV (`.csv`) + JSON (`.json`) + Markdown (`.md`)
 - 📊 **Excel + JSON 雙格式**
+- 📄 **CSV 表格檔 (`.csv`)**：內建 UTF-8 with BOM 編碼，支援多工作表自動拆分，Excel 開啟繁中不亂碼
 - 📑 **Markdown 報表**：純文字輕量表格，適合貼入 AI（ChatGPT / Claude）、Notion 或 Obsidian
-- 僅 Excel 活頁簿 / 僅 JSON 結構化檔案
+- 僅 Excel 活頁簿 / 僅 CSV 表格檔 / 僅 JSON 結構化檔案
 
 ---
 
